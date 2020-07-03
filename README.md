@@ -1,6 +1,6 @@
 # Camera:
 
-1. <b>TestLibUVCWebCamera</b> - Records a specific frame and saves in JPEG format
+1. <b>TestLibUVCWebCamera</b> - Records a specific frame and saves in `JPEG` format
 
 1.1 Download `libusb` from `https://github.com/libusb/libusb/releases` and install it
 
@@ -16,7 +16,7 @@
 
 1.7 Check available formats: `$ v4l2-ctl --list-formats-ext`, for example:
 
-	`$ v4l2-ctl --list-formats-ext`
+	$ v4l2-ctl --list-formats-ext
 	ioctl: VIDIOC_ENUM_FMT
         Type: Video Capture
 
