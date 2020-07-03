@@ -14,7 +14,7 @@
 
 1.6 Check web-camera: `$ lsusb`
 
-1.7 Check formats: `$ v4l2-ctl --list-formats-ext`, for example:
+1.7 Check available formats: `$ v4l2-ctl --list-formats-ext`, for example:
 
 	`$ v4l2-ctl --list-formats-ext`
 	ioctl: VIDIOC_ENUM_FMT
