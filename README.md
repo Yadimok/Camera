@@ -2,13 +2,13 @@
 
 1. <b>TestLibUVCWebCamera</b> - Records a specific frame and saves in `JPEG` format
 
-1.1 Download `libusb` from `https://github.com/libusb/libusb/releases` and install it
+1.1 Download `libusb` from `https://github.com/libusb/libusb/releases` and install
 
 1.2 Install `v4l-utils`: `$ sudo apt install v4l-utils`
 
 1.3 Install `libjpeg`: `$ sudo apt install libjpeg-dev`
 
-1.4 Download `libUVC` from `https://github.com/libuvc/libuvc` and install it
+1.4 Download `libUVC` from `https://github.com/libuvc/libuvc` and install
 
 1.5 Connect web-camera to PC
 
