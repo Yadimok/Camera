@@ -44,7 +44,7 @@ GrabVideo::GrabVideo(QObject *parent) : QObject(parent)
 
 GrabVideo::~GrabVideo()
 {
-    //    av_free_packet(&packet);
+    av_free_packet(&packet);
     avcodec_close(pAVCodecCtx);
     av_free(pAVFrame);
     av_free(pAVFrameRGB);
@@ -137,10 +137,8 @@ void GrabVideo::GetVideo()
                 sws_scale(pSwsCtx, ((AVPicture*)pAVFrame)->data, ((AVPicture *)pAVFrame)->linesize, 0, pAVCodecCtx->height,
                           ((AVPicture *)pAVFrameRGB)->data, ((AVPicture *)pAVFrameRGB)->linesize);
 
-                pAVFrameRGB->width = pAVFrame->width;
-                pAVFrameRGB->height = pAVFrame->height;
-
-                emit SendFrame(pAVFrameRGB);
+                QImage img(pAVFrameRGB->data[0], pAVCodecCtx->width, pAVCodecCtx->height, QImage::Format_RGB888);
+                SendImage(img);
 
                 av_free_packet(&packet);
             }

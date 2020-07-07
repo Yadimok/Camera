@@ -64,7 +64,7 @@ private slots:
     void on_pbStop();
     void on_pbGrabPicture();
     void on_comboBoxCurrentIndex(int index);
-    void GetFrame(AVFrame *frame);
+    void GetImage(QImage image);
     void updateDateTime();
 };
 #endif // MAINWINDOW_H

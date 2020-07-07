@@ -23,6 +23,7 @@
 #define GRABVIDEO_H
 
 #include <QObject>
+#include <QImage>
 
 extern "C" {
 #include <libavdevice/avdevice.h>
@@ -57,7 +58,7 @@ public:
 
 signals:
     void SendInfo(QString message);
-    void SendFrame(AVFrame *frame);
+    void SendImage(QImage image);
 
 public slots:
 

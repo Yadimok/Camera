@@ -38,7 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
     thread->start();
 
     connect(kGrabVideo, SIGNAL(SendInfo(QString)), this, SLOT(GetInfo(QString)));
-    connect(kGrabVideo, SIGNAL(SendFrame(AVFrame *)), this, SLOT(GetFrame(AVFrame *)));
+    connect(kGrabVideo, SIGNAL(SendImage(QImage)), this, SLOT(GetImage(QImage)));
 
     labVideo = new QLabel();
     pbStop = new QPushButton(tr("Stop"));
@@ -182,11 +182,10 @@ void MainWindow::on_pbGrabPicture()
     }
 }
 
-void MainWindow::GetFrame(AVFrame *frame)
+void MainWindow::GetImage(QImage image)
 {
-    qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-    QImage img(frame->data[0], frame->width, frame->height, QImage::Format_RGB888);
-    labVideo->setPixmap(QPixmap::fromImage(img));
+    qApp->processEvents();
+    labVideo->setPixmap(QPixmap::fromImage(image));
     qApp->processEvents();
 }
 
