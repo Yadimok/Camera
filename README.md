@@ -39,3 +39,5 @@
                 Size: Discrete 320x240
                         Interval: Discrete 0.033s (30.000 fps)
 
+2. <b>TestGrabVideoWebCamera</b> - Web-camera grabber, resolution formats for a specific webcam
+
