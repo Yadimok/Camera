@@ -42,3 +42,5 @@
 2. <b>TestGrabVideoWebCamera</b> - Web-camera grabber, resolution formats for a specific webcam
 
 3. <b>TestWebCameraV4L2</b> - Example V4L2 with web camera.
+
+4. <b>TestQDockView</b> - View from a specific web-camera.
