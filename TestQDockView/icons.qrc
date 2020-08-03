@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/">
+        <file>zoom-in.png</file>
+        <file>zoom-out.png</file>
+        <file>play_500x500.png</file>
+        <file>pause_500x500.png</file>
+        <file>stop_500x500.png</file>
+        <file>camera-photo.png</file>
+    </qresource>
+</RCC>
