@@ -38,6 +38,8 @@ private:
     QPointer<QPushButton> pbStopStream;
     QPointer<QPushButton> pbTakePicture;
 
+    QPointer<QLabel> labelCaptured;
+
     UVCFrameCapture *kUVCFrameCapture;
     QPointer<QThread> kThread;
     QPointer<QTimer> kTimer;

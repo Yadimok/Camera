@@ -38,6 +38,8 @@ MainWindow::MainWindow(QWidget *parent)
     graphicsPixmapItem = new QGraphicsPixmapItem;
     graphicsScene->addItem(graphicsPixmapItem);
 
+    labelCaptured = new QLabel;
+
     hboxLayout->addWidget(pbStartStream);
     hboxLayout->addStretch(5);
     hboxLayout->addWidget(pbStopStream);
@@ -50,6 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
     groupBox->setLayout(hboxLayout);
 
     vboxLayout->addWidget(graphicsView);
+    vboxLayout->addWidget(labelCaptured);
     vboxLayout->addWidget(groupBox);
 
     pWidget->setLayout(vboxLayout);
@@ -125,7 +128,7 @@ void MainWindow::slotTakePicture()
 {
     if (!graphicsPixmapItem->pixmap().isNull())
     {
-        QString fileName = QDateTime::currentDateTime().toString("dd_MM_yyyy_hh_mm_ss_zzz");
+        QString fileName = QDir::currentPath() + "/" +QDateTime::currentDateTime().toString("dd_MM_yyyy_hh_mm_ss_zzz");
         QString suffix = ".png";
         fileName += suffix;
 
@@ -134,7 +137,7 @@ void MainWindow::slotTakePicture()
         buffer.open(QIODevice::WriteOnly);
 
         graphicsPixmapItem->pixmap().save(fileName, "PNG", QUALITY);
-
+        labelCaptured->setText(tr("Image saved in '%1'").arg(QDir::toNativeSeparators(fileName)));
         if (buffer.isOpen())
             buffer.close();
     }
