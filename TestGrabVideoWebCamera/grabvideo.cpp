@@ -26,68 +26,49 @@ GrabVideo::GrabVideo(QObject *parent) : QObject(parent)
     avcodec_register_all();
 
     pAVCodecCtx = nullptr;
-    pAVFormatCtx = avformat_alloc_context();
     pAVCodec = nullptr;
     pAVInputFormat = nullptr;
     pOptions = nullptr;
-    pAVFrame = av_frame_alloc();
-    pAVFrameRGB = av_frame_alloc();
-
-    pixelFormat = AV_PIX_FMT_RGB24;
+    pSwsCtx = nullptr;
 
     bRunning = false;
 
     gotFrameFinished = 0;
     videoStream = -1;
 
+    pAVFormatCtx = avformat_alloc_context();
 }
 
 GrabVideo::~GrabVideo()
 {
-    av_free_packet(&packet);
-    avcodec_close(pAVCodecCtx);
-    av_free(pAVFrame);
-    av_free(pAVFrameRGB);
-    avformat_close_input(&pAVFormatCtx);
+    if (pAVFormatCtx != nullptr) {
+        avformat_close_input(&pAVFormatCtx);
+        avformat_free_context(pAVFormatCtx);
+    }
 }
 
-void GrabVideo::SetRunning(const bool run)
+void GrabVideo::InitVideo()
 {
-    bRunning = run;
-}
+    pAVFrame = av_frame_alloc();
+    pAVFrameRGB = av_frame_alloc();
 
-void GrabVideo::InitVideo(Resolution res)
-{
-    pAVInputFormat = av_find_input_format("v4l2");
-
-    switch (res) {
-    case SIZE_NONE:
-        emit SendInfo(tr("Resolution SIZE_NONE"));
-        break;
-    case SIZE_320_240:
-        av_dict_set(&pOptions, "video_size", "320x240", 0);
-        break;
-    case SIZE_640_480:
-        av_dict_set(&pOptions, "video_size", "640x480", 0);
-        break;
-    case SIZE_800_600:
-        av_dict_set(&pOptions, "video_size", "800x600", 0);
-        break;
-    case SIZE_1280_720:
-        av_dict_set(&pOptions, "video_size", "1280x720", 0);
-        break;
-    default:
-        av_dict_set(&pOptions, "video_size", "640x480", 0);
-        break;
+    pAVInputFormat = av_find_input_format("video4linux2");
+    if (pAVInputFormat == nullptr) {
+        emit signalSendInfo(tr("av_find_input_format failed"));
+        return;
     }
 
+    av_dict_set(&pOptions, "video_size", "1280x720", 0);
 
     if (avformat_open_input(&pAVFormatCtx, fileNameSrc, pAVInputFormat, &pOptions) != 0) {
-        emit SendInfo(tr("avformat_open_input failed"));
+        emit signalSendInfo(tr("avformat_open_input failed"));
+        //        avformat_close_input(&pAVFormatCtx);
+        return;
     }
 
     if (avformat_find_stream_info(pAVFormatCtx, nullptr) < 0) {
-        emit SendInfo(tr("avformat_find_stream_info failed"));
+        emit signalSendInfo(tr("avformat_find_stream_info failed"));
+        return;
     }
 
     for (int i=0; pAVFormatCtx->nb_streams; i++) {
@@ -98,56 +79,80 @@ void GrabVideo::InitVideo(Resolution res)
     }
 
     if (videoStream == -1) {
-        emit SendInfo(tr("videoStream failed"));
+        emit signalSendInfo(tr("videoStream failed"));
+        return;
     }
 
     pAVCodecCtx = pAVFormatCtx->streams[videoStream]->codec;
     pAVCodec = avcodec_find_decoder(pAVCodecCtx->codec_id);
     if (pAVCodec == nullptr) {
-        emit SendInfo(tr("avcodec_find_decoder failed"));
+        emit signalSendInfo(tr("avcodec_find_decoder failed"));
+        return;
     }
 
     if (avcodec_open2(pAVCodecCtx, pAVCodec, nullptr) < 0) {
-        emit SendInfo(tr("avcodec_open2 failed"));
+        emit signalSendInfo(tr("avcodec_open2 failed"));
+        return;
     }
+
+    bRunning = true;
+    pixelFormat = AV_PIX_FMT_RGB24;
+
+    pSwsCtx = sws_getContext(pAVCodecCtx->width, pAVCodecCtx->height, pAVCodecCtx->pix_fmt,
+                             pAVCodecCtx->width, pAVCodecCtx->height, pixelFormat,
+                             SWS_BICUBIC, nullptr, nullptr, nullptr);
 }
 
-void GrabVideo::GetVideo()
+void GrabVideo::OpenCamera()
 {
     uint8_t *frame_buffer = nullptr;
     int totalBytes = 0;
-    struct SwsContext *pSwsCtx = nullptr;
+
+    AVPacket *packet = (AVPacket *)av_malloc(sizeof(AVPacket));
 
     totalBytes = avpicture_get_size(pixelFormat, pAVCodecCtx->width, pAVCodecCtx->height);
     frame_buffer = (uint8_t *)av_malloc(totalBytes * sizeof (uint8_t));
 
     avpicture_fill((AVPicture *)pAVFrameRGB, frame_buffer, pixelFormat, pAVCodecCtx->width, pAVCodecCtx->height);
-    av_init_packet(&packet);
 
-    while (av_read_frame(pAVFormatCtx, &packet) >= 0)
+    while (bRunning)
     {
-        if (packet.stream_index == videoStream)
+        if (av_read_frame(pAVFormatCtx, packet) >= 0)
         {
-            avcodec_decode_video2(pAVCodecCtx, pAVFrame, &gotFrameFinished, &packet);
-            if (gotFrameFinished)
+            if (packet->stream_index == videoStream)
             {
-                pSwsCtx = sws_getCachedContext(nullptr, pAVCodecCtx->width, pAVCodecCtx->height, pAVCodecCtx->pix_fmt,
-                                               pAVCodecCtx->width, pAVCodecCtx->height, pixelFormat,
-                                               SWS_BICUBIC, nullptr, nullptr, nullptr);
-                sws_scale(pSwsCtx, ((AVPicture*)pAVFrame)->data, ((AVPicture *)pAVFrame)->linesize, 0, pAVCodecCtx->height,
-                          ((AVPicture *)pAVFrameRGB)->data, ((AVPicture *)pAVFrameRGB)->linesize);
+                avcodec_decode_video2(pAVCodecCtx, pAVFrame, &gotFrameFinished, packet);
+                if (gotFrameFinished)
+                {
+                    if (pSwsCtx)
+                    {
+                        sws_scale(pSwsCtx, ((AVPicture*)pAVFrame)->data, ((AVPicture *)pAVFrame)->linesize, 0, pAVCodecCtx->height,
+                                  ((AVPicture *)pAVFrameRGB)->data, ((AVPicture *)pAVFrameRGB)->linesize);
 
-                QImage img(pAVFrameRGB->data[0], pAVCodecCtx->width, pAVCodecCtx->height, QImage::Format_RGB888);
-                SendImage(img);
-
-                av_free_packet(&packet);
+                        QImage img(pAVFrameRGB->data[0], pAVCodecCtx->width, pAVCodecCtx->height, QImage::Format_RGB888);
+                        signalSendImage(img);
+                    }
+                }
             }
+            av_packet_unref(packet);
         }
-
-        if (!bRunning)
-            break;
     } //while
 
-    sws_freeContext(pSwsCtx);
     av_free(frame_buffer);
+}
+
+void GrabVideo::CloseCamera()
+{
+    bRunning = false;
+
+    if (pSwsCtx != nullptr)
+        sws_freeContext(pSwsCtx);
+
+    if (pAVFrame != nullptr)
+        av_free(pAVFrame);
+
+    if (pAVFrameRGB != nullptr)
+        av_free(pAVFrameRGB);
+
+    avcodec_close(pAVCodecCtx);
 }

@@ -47,24 +47,22 @@ private:
 
     GrabVideo *kGrabVideo;
 
-    QLabel *labVideo;
-    QPushButton *pbStart;
-    QPushButton *pbStop;
-    QPushButton *pbGrabPicture;
+    QPointer<QLabel> labelVideo;
+    QPointer<QPushButton> pbStart;
+    QPointer<QPushButton> pbStop;
+    QPointer<QPushButton> pbGrabPicture;
     QTimer *mTimer;
-
-    Resolution resolution;
+    bool bClosed;
 
 protected:
     void closeEvent(QCloseEvent *event) override;
 
 private slots:
-    void GetInfo(QString message);
-    void on_pbStart();
-    void on_pbStop();
-    void on_pbGrabPicture();
-    void on_comboBoxCurrentIndex(int index);
-    void GetImage(QImage image);
-    void updateDateTime();
+    void slotGetInfo(QString message);
+    void slotStart();
+    void slotStop();
+    void slotGrabPicture();
+    void slotGetImage(QImage image);
+    void slotUpdateDateTime();
 };
 #endif // MAINWINDOW_H

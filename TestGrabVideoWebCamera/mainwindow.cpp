@@ -32,67 +32,59 @@ MainWindow::MainWindow(QWidget *parent)
     kGrabVideo = new GrabVideo();
     kGrabVideo->moveToThread(thread);
 
+    connect(thread, SIGNAL(finished()), kGrabVideo, SLOT(deleteLater()));
+    connect(this, SIGNAL(destroyed()), thread, SLOT(quit()));
     connect(kGrabVideo, SIGNAL(destroyed()), thread, SLOT(quit()));
     connect(kGrabVideo, SIGNAL(destroyed()), kGrabVideo, SLOT(deleteLater()));
-    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
     thread->start();
 
-    connect(kGrabVideo, SIGNAL(SendInfo(QString)), this, SLOT(GetInfo(QString)));
-    connect(kGrabVideo, SIGNAL(SendImage(QImage)), this, SLOT(GetImage(QImage)));
+    connect(kGrabVideo, SIGNAL(signalSendInfo(QString)), this, SLOT(slotGetInfo(QString)));
+    connect(kGrabVideo, SIGNAL(signalSendImage(QImage)), this, SLOT(slotGetImage(QImage)));
 
-    labVideo = new QLabel();
+    labelVideo = new QLabel();
     pbStop = new QPushButton(tr("Stop"));
     pbStop->setEnabled(false);
     pbStart = new QPushButton(tr("Start"));
-    pbStart->setEnabled(false);
+    pbStart->setEnabled(true);
     pbGrabPicture = new QPushButton(tr("Grab picture"));
     pbGrabPicture->setEnabled(false);
 
-    QGroupBox *videoLabelGroupBox = new QGroupBox();
-    QHBoxLayout *hVideoBoxLayout = new QHBoxLayout();
-    hVideoBoxLayout->addWidget(labVideo);
+    QPointer<QGroupBox> videoLabelGroupBox = new QGroupBox();
+    QPointer<QHBoxLayout> hVideoBoxLayout = new QHBoxLayout();
+    hVideoBoxLayout->addWidget(labelVideo);
     videoLabelGroupBox->setLayout(hVideoBoxLayout);
 
-    QComboBox *comboBox = new QComboBox();
-    comboBox->setToolTip(tr("Resolution of web camera"));
-    comboBox->addItems(QStringList() << "-1"
-                       << "320x240"
-                       << "640x480"
-                       << "800x600"
-                       << "1280x720");
-    comboBox->setCurrentIndex(0);
-
-    QGroupBox *groupBox = new QGroupBox();
-    QHBoxLayout *hBoxLayout = new QHBoxLayout();
+    QPointer<QGroupBox> groupBox = new QGroupBox();
+    QPointer<QHBoxLayout> hBoxLayout = new QHBoxLayout();
     hBoxLayout->addWidget(pbStart);
     hBoxLayout->addStretch(5);
     hBoxLayout->addWidget(pbStop);
     hBoxLayout->addStretch(5);
-    hBoxLayout->addWidget(comboBox);
-    hBoxLayout->addStretch(5);
     hBoxLayout->addWidget(pbGrabPicture);
     groupBox->setLayout(hBoxLayout);
 
-    QVBoxLayout *layout = new QVBoxLayout();
+    QPointer<QVBoxLayout> layout = new QVBoxLayout();
     layout->addWidget(videoLabelGroupBox);
     layout->stretch(2);
     layout->addWidget(groupBox);
 
     ui->centralwidget->setLayout(layout);
 
-    connect(pbStart, SIGNAL(clicked()), SLOT(on_pbStart()));
-    connect(pbStop, SIGNAL(clicked()), SLOT(on_pbStop()));
-    connect(pbGrabPicture, SIGNAL(clicked()), SLOT(on_pbGrabPicture()));
-    connect(comboBox, SIGNAL(currentIndexChanged(int)), SLOT(on_comboBoxCurrentIndex(int)));
+    connect(pbStart, SIGNAL(clicked()), SLOT(slotStart()));
+    connect(pbStop, SIGNAL(clicked()), SLOT(slotStop()));
+    connect(pbGrabPicture, SIGNAL(clicked()), SLOT(slotGrabPicture()));
 
     mTimer = new QTimer();
-    connect(mTimer, SIGNAL(timeout()), SLOT(updateDateTime()));
+    connect(mTimer, SIGNAL(timeout()), SLOT(slotUpdateDateTime()));
     mTimer->start(1000);
+
+    bClosed = false;
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+
     delete kGrabVideo;
 }
 
@@ -104,12 +96,13 @@ void MainWindow::closeEvent(QCloseEvent *event)
     if (ret == QMessageBox::No) {
         event->ignore();
     } else {
-        on_pbStop();
+        if (!bClosed)
+            slotStop();
         event->accept();
     }
 }
 
-void MainWindow::GetInfo(QString message)
+void MainWindow::slotGetInfo(QString message)
 {
     QMessageBox msgBox;
     msgBox.setText("Error");
@@ -118,54 +111,31 @@ void MainWindow::GetInfo(QString message)
     msgBox.exec();
 }
 
-void MainWindow::on_comboBoxCurrentIndex(int index)
-{
-    switch (index) {
-    case 0:
-        resolution = SIZE_NONE;
-        break;
-    case 1:
-        resolution = SIZE_320_240;
-        break;
-    case 2:
-        resolution = SIZE_640_480;
-        break;
-    case 3:
-        resolution = SIZE_800_600;
-        break;
-    case 4:
-        resolution = SIZE_1280_720;
-        break;
-    default:
-        resolution = SIZE_640_480;
-        break;
-    }
-
-    pbStart->setEnabled(true);
-}
-
-void MainWindow::on_pbStart()
+void MainWindow::slotStart()
 {
     pbStart->setEnabled(false);
     pbStop->setEnabled(true);
     pbGrabPicture->setEnabled(true);
 
-    kGrabVideo->SetRunning(true);
-    kGrabVideo->InitVideo(resolution);
-    kGrabVideo->GetVideo();
+    kGrabVideo->InitVideo();
+    kGrabVideo->OpenCamera();
+
+    bClosed = true;
 }
 
-void MainWindow::on_pbStop()
+void MainWindow::slotStop()
 {
+    kGrabVideo->CloseCamera();
+
     pbStart->setEnabled(true);
     pbStop->setEnabled(false);
 
-    kGrabVideo->SetRunning(false);    
+    bClosed = false;
 }
 
-void MainWindow::on_pbGrabPicture()
+void MainWindow::slotGrabPicture()
 {
-    if (labVideo->pixmap() != nullptr)
+    if (labelVideo->pixmap() != nullptr)
     {
         QString fileName = QDateTime::currentDateTime().toString("dd_MM_yyyy_hh_mm_ss_zzz");
         QString suffix = ".png";
@@ -175,21 +145,21 @@ void MainWindow::on_pbGrabPicture()
         QBuffer buffer(&array);
         buffer.open(QIODevice::WriteOnly);
 
-        labVideo->pixmap()->save(fileName, "PNG", QUALITY);
+        labelVideo->pixmap()->save(fileName, "PNG", QUALITY);
 
         if (buffer.isOpen())
             buffer.close();
     }
 }
 
-void MainWindow::GetImage(QImage image)
+void MainWindow::slotGetImage(QImage image)
 {
     qApp->processEvents();
-    labVideo->setPixmap(QPixmap::fromImage(image));
+    labelVideo->setPixmap(QPixmap::fromImage(image));
     qApp->processEvents();
 }
 
-void MainWindow::updateDateTime()
+void MainWindow::slotUpdateDateTime()
 {
     QString dateTime = QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss");
     statusBar()->showMessage(dateTime);

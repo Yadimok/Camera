@@ -35,14 +35,6 @@ extern "C" {
 
 const char fileNameSrc[] = "/dev/video0";
 
-enum Resolution{
-    SIZE_NONE,
-    SIZE_320_240,
-    SIZE_640_480,
-    SIZE_800_600,
-    SIZE_1280_720
-};
-
 class GrabVideo : public QObject
 {
     Q_OBJECT
@@ -52,13 +44,13 @@ public:
     explicit GrabVideo(QObject *parent = nullptr);
     ~GrabVideo();
 
-    void SetRunning(const bool run);
-    void InitVideo(Resolution res);
-    void GetVideo();
+    void InitVideo();
+    void OpenCamera();
+    void CloseCamera();
 
 signals:
-    void SendInfo(QString message);
-    void SendImage(QImage image);
+    void signalSendInfo(QString message);
+    void signalSendImage(QImage image);
 
 public slots:
 
@@ -70,13 +62,13 @@ private:
     AVFrame *pAVFrame;
     AVFrame *pAVFrameRGB;
     AVDictionary *pOptions;
-    AVPacket packet;
     AVPixelFormat pixelFormat;
+    struct SwsContext *pSwsCtx;
 
     int gotFrameFinished;
     int videoStream;
 
-    bool bRunning;
+    std::atomic<bool> bRunning;
 
 };
 
