@@ -236,13 +236,9 @@ void grayScaleImage(uint8_t *pixels, size_t width, size_t height, int bpp)
     int data;
     for (data=0; data<totalSize; data +=3)
     {
-        r = pixels[data + 0];
-        g = pixels[data + 1];
-        b = pixels[data + 2];
-
-        r = r * 0.2126;
-        g = g * 0.7152;
-        b = b * 0.0722;
+        r = pixels[data + 0] * 0.2126;
+        g = pixels[data + 1] * 0.7152; 
+        b = pixels[data + 2] * 0.0722;
 
         gray = (r + g + b + 0.5);
 
