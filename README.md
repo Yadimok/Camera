@@ -46,3 +46,5 @@
 4. <b>TestQDockView</b> - View from a specific web-camera.
 
 5. <b>TestConvertImage</b> - Convert image from YUYV format to RGB888. Flip image: horizontal and vertical. Convert colored image to gray.
+	Tested on `Asus Tinker Board S`. Before run type in terminal `export LIBGL_ALWAYS_SOFTWARE=1 glxgears` for correct run.
+ 
