@@ -44,3 +44,5 @@
 3. <b>TestWebCameraV4L2</b> - Example V4L2 with web camera.
 
 4. <b>TestQDockView</b> - View from a specific web-camera.
+
+5. <b>TestConvertImage</b> - Convert image from YUYV format to RGB888. Flip image: horizontal and vertical. Convert colored image to gray.
