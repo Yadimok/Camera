@@ -2,6 +2,7 @@
 
 const char Camera::device_name[SIZE_TEXT] = "/dev/video0";
 
+
 Camera::Camera() : m_fd(-1), m_type(0),
     m_x264_handle(nullptr),
     m_x264_nals(nullptr),
@@ -94,11 +95,6 @@ void Camera::UnInitDevice()
     }
 
     free(m_buffers);
-}
-
-void Camera::doProcessing()
-{
-    m_futProcess = std::async(std::launch::async, &Camera::StartCapture, this);
 }
 
 void Camera::StartCapture()

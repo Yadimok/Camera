@@ -1,15 +1,26 @@
 #include <iostream>
+#include <thread>
 #include <memory>
 
 #include "camera.h"
 
+class CameraRunner {
+    Camera kCamera;
+public:
+    void Run() {
+        kCamera.InitDevice();
+        kCamera.Openx264Encoder();
+        kCamera.StartCapture();
+    }
+};
+
 int main(int argc, char *argv[])
 {
-    std::unique_ptr<Camera> pCamera(new Camera());
-    pCamera->InitDevice();
-    pCamera->Openx264Encoder();
-    pCamera->StartCapture();
+    CameraRunner kCameraRunner;
+    std::thread tCamera{&CameraRunner::Run, &kCameraRunner};
 
+    if (tCamera.joinable())
+        tCamera.join();
 
     return 0;
 }

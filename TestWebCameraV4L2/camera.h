@@ -13,7 +13,6 @@
 #include <string.h>
 
 #include <x264.h>
-#include <future>
 #include <fstream>
 
 #include <opencv4/opencv2/opencv.hpp>
@@ -55,8 +54,7 @@ class Camera
     int             m_x264_numNals;
 
     void Setx264Params();
-    std::future<void>   m_futProcess;
-    std::ofstream       m_ofs;
+    std::ofstream   m_ofs;
 
 public:
     Camera();
@@ -68,7 +66,6 @@ public:
     void StopCapture();
 
     void Openx264Encoder();
-    void doProcessing();
 
 private:
 
@@ -78,8 +75,8 @@ private:
 
     static const char device_name[SIZE_TEXT];
 
-    int                 m_fd, m_r;
-    int                 m_type;
+    int                 m_fd;
+    int                 m_type, m_r;
 
     v4l2_capability     m_capability;
     v4l2_format         m_format;
