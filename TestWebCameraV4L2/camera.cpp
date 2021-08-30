@@ -165,7 +165,7 @@ void Camera::StartCapture()
         xioctl(m_fd, VIDIOC_QBUF, &m_bufferinfo);
     }
 
-    while (1) {
+    while (x264_encoder_delayed_frames(m_x264_handle)) {
         length_frame = x264_encoder_encode(m_x264_handle, &m_x264_nals, &m_x264_numNals, nullptr, m_x264_picOut);
         if (length_frame == 0)
             break;
